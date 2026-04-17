@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Faltona — Registro Interventi N210</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --bg:#0f1117; --surface:#161b27; --surface2:#1e2535;
+  --border:#2a3347; --border2:#354060;
+  --accent:#00d4a1; --accent2:#0088cc; --gold:#c8a84b;
+  --danger:#ff4d6d; --warn:#ffb347; --info:#5b9bd5;
+  --text:#e8edf5; --text2:#8a95aa; --text3:#4a5568;
+  --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+  --radius:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+
+/* HEADER */
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-icon{width:28px;height:28px;background:var(--accent);border-radius:4px;display:flex;align-items:center;justify-content:center}
+.logo-icon svg{width:16px;height:16px}
+.logo-text{font-weight:600;font-size:15px;letter-spacing:-.3px}
+.logo-sub{font-size:11px;color:var(--text2);font-family:var(--mono);margin-top:1px}
+.nav-tabs{display:flex;gap:2px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:3px}
+.nav-tab{padding:5px 16px;border-radius:4px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text2);transition:all .15s;border:none;background:none}
+.nav-tab.active{background:var(--surface2);color:var(--text)}
+.status-badge{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11px;color:var(--text2)}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* MAIN */
+main{max-width:1100px;margin:0 auto;padding:32px 24px}
+.view{display:none}.view.active{display:block}
+
+/* FORM HEADER */
+.form-header{margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+.asset-badge{display:inline-flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--accent);padding:6px 12px;border-radius:var(--radius);font-family:var(--mono);font-size:12px;color:var(--accent);margin-bottom:12px}
+.form-title{font-size:22px;font-weight:600;letter-spacing:-.5px;margin-bottom:4px}
+.form-subtitle{color:var(--text2);font-size:13px}
+
+/* SECTIONS */
+.section{background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:16px;overflow:hidden}
+.section-header{padding:12px 20px;background:var(--surface2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
+.section-num{width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--bg);font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;font-family:var(--mono);flex-shrink:0}
+.section-title{font-weight:500;font-size:13px;flex:1}
+.section-count{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.chevron{transition:transform .2s;color:var(--text3)}
+.section.collapsed .chevron{transform:rotate(-90deg)}
+.section.collapsed .section-body{display:none}
+.section-body{padding:20px}
+
+/* GRID */
+.fields-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fields-grid.three{grid-template-columns:1fr 1fr 1fr}
+.field-full{grid-column:1/-1}
+
+/* FIELD */
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;font-family:var(--mono)}
+.field label .req{color:var(--accent);margin-left:2px}
+.field label .auto-tag{color:var(--info);margin-left:6px;font-size:10px;font-weight:400}
+.field input,.field select,.field textarea{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--sans);font-size:13px;padding:8px 12px;transition:border-color .15s;outline:none;width:100%}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.field input[type="datetime-local"]{color-scheme:dark}
+.field textarea{resize:vertical;min-height:72px;line-height:1.5}
+.field select option{background:var(--surface)}
+.field input[readonly]{color:var(--text2);cursor:default;background:var(--surface)}
+.field-hint{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* REPEATABLE ROWS */
+.repeat-container{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.repeat-row{display:grid;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px;position:relative}
+.repeat-row.squadra-row{grid-template-columns:2fr 1.5fr 0.8fr 28px}
+.repeat-row.ricambio-row{grid-template-columns:1fr 2fr 28px}
+.repeat-row input,.repeat-row select{background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--sans);font-size:12px;padding:6px 10px;outline:none;width:100%}
+.repeat-row input:focus,.repeat-row select:focus{border-color:var(--accent)}
+.repeat-row select option{background:var(--surface)}
+.repeat-row-label{font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px}
+.btn-remove-row{width:28px;height:28px;background:none;border:1px solid var(--border);border-radius:4px;color:var(--text3);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;align-self:end;flex-shrink:0;transition:all .15s}
+.btn-remove-row:hover{border-color:var(--danger);color:var(--danger)}
+.btn-add-row{display:flex;align-items:center;gap:6px;padding:7px 12px;background:none;border:1px dashed var(--border2);border-radius:var(--radius);color:var(--text2);font-size:12px;font-family:var(--sans);cursor:pointer;transition:all .15s;margin-top:4px;width:100%;justify-content:center}
+.btn-add-row:hover{border-color:var(--accent);color:var(--accent)}
+.totale-ore{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);font-size:12px;color:var(--text2);font-family:var(--mono);margin-top:4px}
+.totale-ore-val{color:var(--accent);font-weight:500}
+
+/* CONDITIONAL FIELD */
+.conditional-field{display:none}
+.conditional-field.visible{display:flex}
+
+/* BUTTONS */
+.btn{padding:9px 20px;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;border:none;font-family:var(--sans);transition:all .15s}
+.btn-ghost{background:var(--surface2);color:var(--text2);border:1px solid var(--border)}
+.btn-ghost:hover{color:var(--text);border-color:var(--text3)}
+.btn-primary{background:var(--accent);color:var(--bg);font-weight:600;display:flex;align-items:center;gap:8px}
+.btn-primary:hover{opacity:.9}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-export{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn-export:hover{border-color:var(--accent2);color:var(--accent2)}
+.btn-export-xlsx{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn-export-xlsx:hover{border-color:#1d6f42;color:#2ea65a}
+.btn-pdf{background:none;border:1px solid var(--border);border-radius:4px;color:var(--text2);font-size:11px;font-family:var(--mono);padding:3px 8px;cursor:pointer;white-space:nowrap;transition:all .15s}
+.btn-pdf:hover{border-color:var(--danger);color:var(--danger)}
+.form-actions{display:flex;gap:12px;justify-content:flex-end;padding-top:20px;border-top:1px solid var(--border);margin-top:8px}
+
+/* STATUS SELECT */
+select#f_stato_record option[value="Bozza"]{color:var(--text2)}
+select#f_stato_record option[value="Completato"]{color:var(--accent)}
+select#f_stato_record option[value="Archiviato"]{color:var(--gold)}
+
+/* STORICO */
+.storico-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.storico-title{font-size:20px;font-weight:600;letter-spacing:-.4px}
+.storico-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.search-input{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);padding:7px 12px;font-size:13px;width:220px;outline:none;font-family:var(--sans)}
+.search-input:focus{border-color:var(--accent)}
+.count-badge{font-family:var(--mono);font-size:11px;color:var(--text2);background:var(--surface2);border:1px solid var(--border);padding:4px 10px;border-radius:20px;white-space:nowrap}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+thead tr{border-bottom:2px solid var(--border)}
+thead th{text-align:left;padding:10px 14px;font-size:11px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;font-family:var(--mono);white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s;cursor:pointer}
+tbody tr:hover{background:var(--surface)}
+tbody td{padding:11px 14px;font-size:13px;color:var(--text);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.td-mono{font-family:var(--mono);font-size:12px;color:var(--accent)}
+.td-date{font-family:var(--mono);font-size:12px;color:var(--text2)}
+.td-actions{white-space:nowrap;text-align:right}
+.pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500;font-family:var(--mono)}
+.pill-ok{background:rgba(0,212,161,.15);color:var(--accent)}
+.pill-warn{background:rgba(255,179,71,.15);color:var(--warn)}
+.pill-danger{background:rgba(255,77,109,.15);color:var(--danger)}
+.pill-info{background:rgba(91,155,213,.15);color:var(--info)}
+.empty-state{text-align:center;padding:60px 20px;color:var(--text3);font-size:13px}
+.empty-icon{font-size:32px;margin-bottom:12px}
+
+/* TOAST */
+#toast{position:fixed;bottom:24px;right:24px;background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--accent);padding:12px 20px;border-radius:var(--radius);font-size:13px;transform:translateY(80px);opacity:0;transition:all .3s;z-index:1000;max-width:320px}
+#toast.show{transform:translateY(0);opacity:1}
+#toast.error{border-left-color:var(--danger)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:center;justify-content:center;padding:24px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:10px;width:100%;max-width:720px;max-height:85vh;overflow-y:auto}
+.modal-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:10}
+.modal-title{font-weight:600;font-size:15px}
+.modal-header-actions{display:flex;gap:8px;align-items:center}
+.modal-close{background:none;border:none;color:var(--text2);font-size:18px;cursor:pointer;line-height:1}
+.modal-close:hover{color:var(--text)}
+.modal-body{padding:20px}
+.detail-section{margin-bottom:20px}
+.detail-section-title{font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.8px;font-family:var(--mono);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px}
+.detail-item{display:flex;flex-direction:column;gap:3px}
+.detail-full{grid-column:1/-1}
+.detail-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;font-family:var(--mono)}
+.detail-value{font-size:13px;color:var(--text);line-height:1.5}
+.detail-value.mono{font-family:var(--mono);color:var(--accent)}
+.detail-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:4px}
+.detail-table th{text-align:left;padding:6px 10px;font-size:10px;color:var(--text3);font-family:var(--mono);text-transform:uppercase;border-bottom:1px solid var(--border)}
+.detail-table td{padding:6px 10px;border-bottom:1px solid var(--border);color:var(--text)}
+
+/* FIREBASE CONFIG */
+.config-notice{background:rgba(0,212,161,.05);border:1px solid rgba(0,212,161,.2);border-radius:8px;padding:20px;margin-bottom:24px}
+.config-notice h3{color:var(--accent);font-size:14px;margin-bottom:8px}
+.config-notice p{color:var(--text2);font-size:13px;line-height:1.6}
+.config-notice code{font-family:var(--mono);font-size:12px;background:var(--surface2);padding:1px 6px;border-radius:3px;color:var(--accent)}
+
+/* SPINNER */
+.spinner{width:14px;height:14px;border:2px solid rgba(0,0,0,.3);border-top-color:var(--bg);border-radius:50%;animation:spin .6s linear infinite;display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:700px){
+  .fields-grid,.fields-grid.three{grid-template-columns:1fr}
+  header{padding:0 16px}
+  main{padding:20px 16px}
+  .logo-sub{display:none}
+  .repeat-row.squadra-row{grid-template-columns:1fr 1fr}
+  .storico-actions{flex-direction:column;align-items:flex-start}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 16 16" fill="none"><path d="M3 13V7l5-4 5 4v6H3z" stroke="#0f1117" stroke-width="1.5"/><rect x="6" y="9" width="4" height="4" fill="#0f1117"/></svg>
+    </div>
+    <div>
+      <div class="logo-text">Faltona</div>
+      <div class="logo-sub">REGISTRO INTERVENTI v2.0</div>
+    </div>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showView('form')">Nuovo intervento</button>
+    <button class="nav-tab" onclick="showView('storico')">Storico</button>
+  </div>
+  <div class="status-badge">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">Connessione...</span>
+  </div>
+</header>
+
+<main>
+
+<!-- ═══════════════════════ FORM VIEW ═══════════════════════ -->
+<div class="view active" id="view-form">
+  <div class="form-header">
+    <div class="asset-badge">▣ <span>N210 — 1° Nastro Trasportatore · Linea di Raffinazione Finale</span></div>
+    <div class="form-title">Consuntivazione intervento</div>
+    <div class="form-subtitle">Compila le sezioni per registrare l'intervento nel sistema</div>
+  </div>
+
+  <!-- S1: INTESTAZIONE -->
+  <div class="section" id="sec1">
+    <div class="section-header" onclick="toggleSection('sec1')">
+      <div class="section-num">1</div>
+      <div class="section-title">Intestazione intervento</div>
+      <div class="section-count">6 campi</div>
+      <span class="chevron">▾</span>
+    </div>
+    <div class="section-body">
+      <div class="fields-grid">
+        <div class="field">
+          <label>ID Intervento <span class="auto-tag">AUTO</span></label>
+          <input type="text" id="f_id_intervento" readonly>
+          <span class="field-hint">Generato automaticamente all'apertura del form</span>
+        </div>
+        <div class="field">
+          <label>Data apertura record <span class="auto-tag">AUTO</span></label>
+          <input type="text" id="f_data_apertura" readonly>
+        </div>
+        <div class="field">
+          <label>Codice asset <span class="auto-tag">PRECOMPILATO</span></label>
+          <input type="text" id="f_codice_asset" value="N210" readonly>
+        </div>
+        <div class="field">
+          <label>Nome asset <span class="auto-tag">PRECOMPILATO</span></label>
+          <input type="text" id="f_nome_asset" value="1° Nastro Trasportatore" readonly>
+        </div>
+        <div class="field field-full">
+          <label>Linea / Sistema <span class="auto-tag">PRECOMPILATO</span></label>
+          <input type="text" id="f_linea" value="Linea di Raffinazione Finale" readonly>
+        </div>
+        <div class="field field-full">
+          <label>Tipo intervento<span class="req">*</span></label>
+          <select id="f_tipo_intervento">
+            <option value="">— Seleziona —</option>
+            <option>Correttivo a guasto</option>
+            <option>Correttivo programmato</option>
+            <option>Preventivo</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S2: ANOMALIA -->
+  <div class="section" id="sec2">
+    <div class="section-header" onclick="toggleSection('sec2')">
+      <div class="section-num">2</div>
+      <div class="section-title">Anomalia rilevata</div>
+      <div class="section-count">5 campi</div>
+      <span class="chevron">▾</span>
+    </div>
+    <div class="section-body">
+      <div class="fields-grid">
+        <div class="field">
+          <label>Componente / sottosistema<span class="req">*</span></label>
+          <select id="f_componente">
+            <option value="">— Seleziona dalla BoM —</option>
+            <option>Riduttore</option>
+            <option>Motore asincrono</option>
+            <option>Braccio di reazione</option>
+            <option>Supporto cuscinetto traino</option>
+            <option>Tamburo di traino</option>
+            <option>Bavetta rullo traino</option>
+            <option>Spondina</option>
+            <option>Cosciale</option>
+            <option>Rullo scorrimento</option>
+            <option>Porta-bavetta</option>
+            <option>Rullo tensionamento</option>
+            <option>Bavetta</option>
+            <option>Supporto cuscinetto rinvio</option>
+            <option>Sistema di tensionamento</option>
+            <option>Bavetta rullo rinvio</option>
+            <option>Tamburo di rinvio</option>
+            <option>Carter protezione</option>
+            <option>Traverso</option>
+            <option>Tappeto nastro</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Modalità di rilevazione<span class="req">*</span></label>
+          <select id="f_modalita_rilevazione">
+            <option value="">— Seleziona —</option>
+            <option>Allarme SCADA</option>
+            <option>Ispezione visiva</option>
+            <option>Fermo macchina</option>
+            <option>Segnalazione operatore</option>
+            <option>Manutenzione preventiva</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Failure mode<span class="req">*</span></label>
+          <select id="f_failure_mode">
+            <option value="">— Seleziona —</option>
+            <option>Rottura meccanica</option>
+            <option>Usura</option>
+            <option>Perdita / trafilamento</option>
+            <option>Anomalia elettrica</option>
+            <option>Anomalia strumentazione</option>
+            <option>Altro</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Impatto sulla produzione<span class="req">*</span></label>
+          <select id="f_impatto_produzione">
+            <option value="">— Seleziona —</option>
+            <option>Fermo linea</option>
+            <option>Rallentamento produzione</option>
+            <option>Nessun impatto operativo</option>
+          </select>
+        </div>
+        <div class="field field-full">
+          <label>Descrizione sintomi<span class="req">*</span></label>
+          <textarea id="f_descrizione_sintomi" placeholder="Descrivere cosa si vede, sente o misura. Cosa ha portato all'identificazione del problema..." maxlength="500"></textarea>
+          <span class="field-hint" id="hint_sintomi">0 / 500 caratteri</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S3: ESECUZIONE -->
+  <div class="section" id="sec3">
+    <div class="section-header" onclick="toggleSection('sec3')">
+      <div class="section-num">3</div>
+      <div class="section-title">Esecuzione intervento</div>
+      <div class="section-count">6 campi</div>
+      <span class="chevron">▾</span>
+    </div>
+    <div class="section-body">
+      <div class="fields-grid">
+        <div class="field">
+          <label>Affidamento<span class="req">*</span></label>
+          <select id="f_affidamento">
+            <option value="">— Seleziona —</option>
+            <option>Interno (Make)</option>
+            <option>Esterno (Buy)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Azione manutentiva<span class="req">*</span></label>
+          <select id="f_azione_manutentiva" onchange="toggleRicambi()">
+            <option value="">— Seleziona —</option>
+            <option>Sostituzione componente</option>
+            <option>Riparazione</option>
+            <option>Regolazione / taratura</option>
+            <option>Pulizia</option>
+            <option>Ispezione</option>
+            <option>Altro</option>
+          </select>
+        </div>
+
+        <!-- SQUADRA INTERVENTO -->
+        <div class="field field-full">
+          <label>Squadra di intervento<span class="req">*</span></label>
+          <div class="repeat-container" id="squadra-container"></div>
+          <button class="btn-add-row" onclick="addSquadraRow()">+ Aggiungi membro</button>
+          <div class="totale-ore">Totale ore/uomo: <span class="totale-ore-val" id="totale-ore-val">0.0</span> h</div>
+        </div>
+
+        <!-- COMPONENTI SOSTITUITI (condizionale) -->
+        <div class="field field-full" id="ricambi-section" style="display:none">
+          <label>Componenti sostituiti <span class="req">*</span></label>
+          <div class="repeat-container" id="ricambi-container"></div>
+          <button class="btn-add-row" onclick="addRicambioRow()">+ Aggiungi ricambio</button>
+        </div>
+
+        <div class="field field-full">
+          <label>Descrizione attività svolta<span class="req">*</span></label>
+          <textarea id="f_descrizione_attivita" placeholder="Descrivere in sequenza le operazioni eseguite: preparazione, fasi operative, collaudo..." maxlength="700"></textarea>
+          <span class="field-hint" id="hint_attivita">0 / 700 caratteri</span>
+        </div>
+        <div class="field field-full">
+          <label>Esito intervento<span class="req">*</span></label>
+          <select id="f_esito_intervento">
+            <option value="">— Seleziona —</option>
+            <option>Risolto</option>
+            <option>Parzialmente risolto</option>
+            <option>Rinviato</option>
+            <option>Non risolto</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S4: DATI TEMPORALI -->
+  <div class="section" id="sec4">
+    <div class="section-header" onclick="toggleSection('sec4')">
+      <div class="section-num">4</div>
+      <div class="section-title">Dati temporali</div>
+      <div class="section-count">4 campi</div>
+      <span class="chevron">▾</span>
+    </div>
+    <div class="section-body">
+      <div class="fields-grid">
+        <div class="field">
+          <label>Data/ora segnalazione guasto<span class="req">*</span></label>
+          <input type="datetime-local" id="f_data_segnalazione" onchange="calcDowntime()">
+        </div>
+        <div class="field">
+          <label>Data/ora inizio esecuzione<span class="req">*</span></label>
+          <input type="datetime-local" id="f_data_inizio" onchange="calcDowntime()">
+        </div>
+        <div class="field">
+          <label>Data/ora fine ripristino<span class="req">*</span></label>
+          <input type="datetime-local" id="f_data_fine" onchange="calcDowntime()">
+        </div>
+        <div class="field">
+          <label>Downtime asset (minuti) <span class="auto-tag">AUTO</span></label>
+          <input type="text" id="f_downtime" readonly placeholder="Calcolato automaticamente">
+          <span class="field-hint">Fine ripristino − Segnalazione guasto</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S5: CHIUSURA -->
+  <div class="section" id="sec5">
+    <div class="section-header" onclick="toggleSection('sec5')">
+      <div class="section-num">5</div>
+      <div class="section-title">Chiusura e validazione</div>
+      <div class="section-count">5 campi</div>
+      <span class="chevron">▾</span>
+    </div>
+    <div class="section-body">
+      <div class="fields-grid">
+        <div class="field field-full">
+          <label>Note tecniche intervento</label>
+          <textarea id="f_note_tecniche" placeholder="Anomalie riscontrate, difficoltà di accesso, condizioni particolari dell'asset, osservazioni per il prossimo intervento..." maxlength="600"></textarea>
+          <span class="field-hint" id="hint_note">0 / 600 caratteri</span>
+        </div>
+        <div class="field">
+          <label>Segnalazione preventiva</label>
+          <select id="f_segnalazione_preventiva" onchange="toggleDettaglio()">
+            <option value="">— Nessuna segnalazione —</option>
+            <option>Verificare componente</option>
+            <option>Pianificare intervento preventivo</option>
+            <option>Sostituire a prossima fermata programmata</option>
+          </select>
+        </div>
+        <div class="field conditional-field" id="dettaglio-field">
+          <label>Dettaglio segnalazione</label>
+          <input type="text" id="f_dettaglio_segnalazione" placeholder="Quale componente, perché, con quale urgenza..." maxlength="200">
+        </div>
+        <div class="field">
+          <label>Responsabile validazione<span class="req">*</span></label>
+          <input type="text" id="f_responsabile" placeholder="Nome e cognome">
+        </div>
+        <div class="field">
+          <label>Stato record<span class="req">*</span></label>
+          <select id="f_stato_record">
+            <option value="Bozza">Bozza</option>
+            <option value="Completato">Completato</option>
+            <option value="Archiviato">Archiviato</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <button class="btn btn-ghost" onclick="resetForm()">Azzera</button>
+    <button class="btn btn-primary" id="submitBtn" onclick="submitForm()">
+      <div class="spinner" id="submitSpinner"></div>
+      <span id="submitLabel">Salva intervento</span>
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════ STORICO VIEW ═══════════════════════ -->
+<div class="view" id="view-storico">
+  <div class="storico-header">
+    <div><div class="storico-title">Storico interventi</div></div>
+    <div class="storico-actions">
+      <input type="text" class="search-input" placeholder="Cerca per ID, componente, esito..." oninput="filterStorico(this.value)">
+      <span class="count-badge" id="countBadge">0 record</span>
+      <button class="btn btn-export" onclick="exportXLSX()">↓ Registro XLSX</button>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>ID Intervento</th>
+          <th>Tipo</th>
+          <th>Data segnalazione</th>
+          <th>Componente</th>
+          <th>Failure mode</th>
+          <th>Esito</th>
+          <th>Downtime (min)</th>
+          <th>Stato</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="storicoBody"></tbody>
+    </table>
+    <div class="empty-state" id="emptyState">
+      <div class="empty-icon">📋</div>
+      <div>Nessun intervento registrato</div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- MODAL DETTAGLIO -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">Dettaglio intervento</div>
+      <div class="modal-header-actions">
+        <button class="btn-pdf" id="btnPdfModal" onclick="exportPDF(currentRecord)">↓ PDF</button>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- FIREBASE CONFIG MODAL -->
+<div class="modal-overlay" id="configModal" style="display:flex">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header">
+      <div class="modal-title">⚙️ Configurazione Firebase</div>
+    </div>
+    <div class="modal-body">
+      <div class="config-notice">
+        <h3>Prima configurazione richiesta</h3>
+        <p>Inserisci le credenziali del progetto Firebase <code>Plures PoC</code>.<br>
+        Le trovi su <code>console.firebase.google.com</code> → Impostazioni → Le tue app.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="field"><label>API Key</label><input type="text" id="cfg_apiKey" placeholder="AIzaSy..."></div>
+        <div class="field"><label>Auth Domain</label><input type="text" id="cfg_authDomain" placeholder="plures-poc.firebaseapp.com"></div>
+        <div class="field"><label>Project ID</label><input type="text" id="cfg_projectId" placeholder="plures-poc"></div>
+        <div class="field"><label>App ID</label><input type="text" id="cfg_appId" placeholder="1:123456:web:abc123"></div>
+      </div>
+      <div style="margin-top:8px;padding:12px;background:rgba(255,179,71,.08);border:1px solid rgba(255,179,71,.2);border-radius:6px">
+        <p style="color:var(--warn);font-size:12px;line-height:1.6">⚠️ Assicurati che <strong>Firestore Database</strong> sia abilitato e in modalità <strong>test</strong>.</p>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:20px;gap:10px">
+        <button class="btn btn-ghost" onclick="resetConfig()" style="margin-right:auto;font-size:11px;padding:6px 12px;color:var(--danger);border-color:rgba(255,77,109,.3)">✕ Reimposta</button>
+        <button class="btn btn-ghost" onclick="useDemoMode()">Usa modalità demo</button>
+        <button class="btn btn-primary" onclick="saveConfig()">Connetti Firebase</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, collection, addDoc, getDocs, orderBy, query, serverTimestamp }
+  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+// ─── State ───────────────────────────────────────────────────────────────────
+let db = null, demoMode = false;
+window.window.allRecords = [];
+window.currentRecord = null;
+let squadraRows = [], ricambiRows = [];
+
+// ─── Init (called at bottom, after all window.* assignments) ────────────────
+
+// ─── Firebase ────────────────────────────────────────────────────────────────
+window.saveConfig = function() {
+  const cfg = {
+    apiKey: v('cfg_apiKey'), authDomain: v('cfg_authDomain'),
+    projectId: v('cfg_projectId'), appId: v('cfg_appId'),
+  };
+  if (!cfg.apiKey || !cfg.projectId) { showToast('Compila almeno API Key e Project ID', true); return; }
+  localStorage.setItem('fb_config', JSON.stringify(cfg));
+  initFirebase(cfg);
+};
+
+window.useDemoMode = function() {
+  demoMode = true;
+  document.getElementById('configModal').style.display = 'none';
+  setStatus('#ffb347', 'Demo locale');
+  window.allRecords = getDemoData();
+  showToast('Modalità demo attiva — dati non salvati nel cloud');
+};
+
+function initFirebase(cfg) {
+  try {
+    const app = initializeApp(cfg);
+    db = getFirestore(app);
+    document.getElementById('configModal').style.display = 'none';
+    setStatus('var(--accent)', 'Firebase connesso');
+    loadStorico();
+  } catch(e) {
+    document.getElementById('configModal').style.display = 'flex';
+    setStatus('var(--danger)', 'Errore config');
+    showToast('Errore Firebase: ' + e.message, true);
+  }
+}
+
+async function loadStorico() {
+  if (demoMode || !db) return;
+  try {
+    const q = query(collection(db, 'interventi'), orderBy('timestamp', 'desc'));
+    const snap = await getDocs(q);
+    window.allRecords = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+    renderStorico(window.allRecords);
+  } catch(e) { console.warn('Load storico:', e); }
+}
+
+// ─── Repeatable rows ─────────────────────────────────────────────────────────
+window.addSquadraRow = function(isFirst = false) {
+  const id = Date.now();
+  squadraRows.push(id);
+  const c = document.getElementById('squadra-container');
+  const div = document.createElement('div');
+  div.className = 'repeat-row squadra-row';
+  div.id = 'sqrow-' + id;
+  div.innerHTML = `
+    <div><div class="repeat-row-label">Nome / Ragione sociale${isFirst?' *':''}</div>
+      <input type="text" id="sq-nome-${id}" placeholder="${isFirst?'Responsabile intervento...':'Nome o ditta...'}"></div>
+    <div><div class="repeat-row-label">Ruolo</div>
+      <select id="sq-ruolo-${id}">
+        <option value="${isFirst?'Responsabile intervento':''}">— Ruolo —</option>
+        <option>Responsabile intervento</option>
+        <option>Manutentore</option>
+        <option>Assistente</option>
+        <option>Supervisore</option>
+        <option>Tecnico specialista</option>
+        <option>Altro</option>
+      </select></div>
+    <div><div class="repeat-row-label">Ore/uomo</div>
+      <input type="number" id="sq-ore-${id}" min="0" step="0.5" placeholder="0.0" oninput="calcTotaleOre()"></div>
+    ${!isFirst ? `<button class="btn-remove-row" onclick="removeRow('squadra','sqrow-${id}','${id}')">✕</button>` : '<div></div>'}
+  `;
+  c.appendChild(div);
+  if (isFirst) document.getElementById(`sq-ruolo-${id}`).value = 'Responsabile intervento';
+};
+
+const RICAMBI_LOOKUP = {
+  '10024882': 'Interruttore induttivo controllagiri',
+  '10024624': 'Motoriduttore da 7,5 kW',
+  '10017978': 'Supporto cuscinetto ø85',
+  '10024625': 'Motoriduttore da 1,1 kW',
+  '10024615': 'Tappeto in gomma antiolio Sv. 1400x13600 aperto',
+  '30044160': 'Asse di rinvio D=70 x TNT — IR-24052-C-00113',
+  '30044161': 'Asse di traino D=110 x TNT — IR-24052-C-00114',
+  '30044163': 'Corona di traino P=125 — IR-24052-C-00115',
+  '30044164': 'Corona di rinvio P=125 con linguetta — IR-24052-C-00117',
+  '30044165': 'Corona di rinvio P=125 — IR-24052-C-00118',
+  '10019057': 'Supporto SNL 520-617',
+  '10013593': 'Cuscinetto 22220 EK',
+  '10019224': 'Ghiera H 320',
+  '10024614': 'Guarnizione TSN 520 L',
+  '10019057': 'Coperchio ASNH 520-617',
+  'IR-24052-C-00176': 'Tapparella di giunzione completa di piatto IR-24052-C-00173',
+  'IR-24052-C-00175': 'Tapparella fix tappeto completa di piatto fix IR-24052-C-00172',
+  'IR-24052-C-00174': 'Tapparella tipica',
+  '10091031': 'Catena a rulli (quantità in metri)',
+  '10024520': 'Maglia di giunzione per catena',
+};
+
+window.addRicambioRow = function() {
+  const id = Date.now();
+  ricambiRows.push(id);
+  const c = document.getElementById('ricambi-container');
+  const div = document.createElement('div');
+  div.className = 'repeat-row ricambio-row';
+  div.id = 'rcrow-' + id;
+  const opts = `<option value="">— Seleziona ricambio —</option>
+<option value="10024882">10024882 — Interruttore induttivo controllagiri</option>
+<option value="10024624">10024624 — Motoriduttore da 7,5 kW</option>
+<option value="10017978">10017978 — Supporto cuscinetto ø85</option>
+<option value="10024625">10024625 — Motoriduttore da 1,1 kW</option>
+<option value="10024615">10024615 — Tappeto in gomma antiolio Sv. 1400x13600 aperto</option>
+<option value="30044160">30044160 — Asse di rinvio D=70 x TNT — IR-24052-C-00113</option>
+<option value="30044161">30044161 — Asse di traino D=110 x TNT — IR-24052-C-00114</option>
+<option value="30044163">30044163 — Corona di traino P=125 — IR-24052-C-00115</option>
+<option value="30044164">30044164 — Corona di rinvio P=125 con linguetta — IR-24052-C-00117</option>
+<option value="30044165">30044165 — Corona di rinvio P=125 — IR-24052-C-00118</option>
+<option value="10019057">10019057 — Supporto SNL 520-617</option>
+<option value="10013593">10013593 — Cuscinetto 22220 EK</option>
+<option value="10019224">10019224 — Ghiera H 320</option>
+<option value="10024614">10024614 — Guarnizione TSN 520 L</option>
+<option value="10019057">10019057 — Coperchio ASNH 520-617</option>
+<option value="IR-24052-C-00176">IR-24052-C-00176 — Tapparella di giunzione completa di piatto IR-24052-C-00173</option>
+<option value="IR-24052-C-00175">IR-24052-C-00175 — Tapparella fix tappeto completa di piatto fix IR-24052-C-00172</option>
+<option value="IR-24052-C-00174">IR-24052-C-00174 — Tapparella tipica</option>
+<option value="10091031">10091031 — Catena a rulli (quantità in metri)</option>
+<option value="10024520">10024520 — Maglia di giunzione per catena</option>
+`;
+  div.innerHTML = `
+    <div style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr 28px;gap:8px;align-items:end">
+      <div>
+        <div class="repeat-row-label">Ricambio (Codice OMAR)</div>
+        <select id="rc-sel-${id}" onchange="onRicambioSelect(${id})" style="background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--sans);font-size:12px;padding:6px 10px;width:100%">
+          ${opts}
+        </select>
+      </div>
+      <div>
+        <div class="repeat-row-label">Descrizione</div>
+        <input type="text" id="rc-desc-${id}" placeholder="Auto-compilata o inserisci manualmente" style="background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--sans);font-size:12px;padding:6px 10px;width:100%">
+      </div>
+      <button class="btn-remove-row" onclick="removeRow('ricambio','rcrow-${id}','${id}')">✕</button>
+    </div>
+  `;
+  c.appendChild(div);
+};
+
+window.onRicambioSelect = function(id) {
+  const sel = document.getElementById('rc-sel-' + id);
+  const desc = document.getElementById('rc-desc-' + id);
+  const code = sel.value;
+  if (code && RICAMBI_LOOKUP[code]) {
+    desc.value = RICAMBI_LOOKUP[code];
+  } else {
+    desc.value = '';
+  }
+};
+
+window.removeRow = function(type, divId, rowId) {
+  document.getElementById(divId).remove();
+  if (type === 'squadra') {
+    squadraRows = squadraRows.filter(r => r != rowId);
+    calcTotaleOre();
+  } else {
+    ricambiRows = ricambiRows.filter(r => r != rowId);
+  }
+};
+
+window.calcTotaleOre = function() {
+  const tot = squadraRows.reduce((s, id) => {
+    const el = document.getElementById('sq-ore-' + id);
+    return s + (el ? parseFloat(el.value) || 0 : 0);
+  }, 0);
+  document.getElementById('totale-ore-val').textContent = tot.toFixed(1);
+};
+
+window.toggleRicambi = function() {
+  const val = document.getElementById('f_azione_manutentiva').value;
+  const sec = document.getElementById('ricambi-section');
+  if (val === 'Sostituzione componente') {
+    sec.style.display = 'flex';
+    if (ricambiRows.length === 0) addRicambioRow();
+  } else {
+    sec.style.display = 'none';
+  }
+};
+
+window.toggleDettaglio = function() {
+  const val = document.getElementById('f_segnalazione_preventiva').value;
+  const f = document.getElementById('dettaglio-field');
+  f.classList.toggle('visible', !!val);
+};
+
+// ─── Downtime ────────────────────────────────────────────────────────────────
+window.calcDowntime = function() {
+  const s = document.getElementById('f_data_segnalazione').value;
+  const f = document.getElementById('f_data_fine').value;
+  if (!s || !f) return;
+  const diff = (new Date(f) - new Date(s)) / 60000;
+  document.getElementById('f_downtime').value = diff > 0 ? Math.round(diff) : '—';
+};
+
+// ─── Collect & submit ─────────────────────────────────────────────────────────
+function collectSquadra() {
+  return squadraRows.map(id => ({
+    nome:  (document.getElementById('sq-nome-' + id) || {}).value || '',
+    ruolo: (document.getElementById('sq-ruolo-' + id) || {}).value || '',
+    ore:   parseFloat((document.getElementById('sq-ore-' + id) || {}).value) || 0,
+  })).filter(r => r.nome);
+}
+
+function collectRicambi() {
+  return ricambiRows.map(id => {
+    const sel  = document.getElementById('rc-sel-'  + id);
+    const desc = document.getElementById('rc-desc-' + id);
+    return {
+      codice: sel  ? sel.value  : '',
+      desc:   desc ? desc.value : '',
+    };
+  }).filter(r => r.codice || r.desc);
+}
+
+window.submitForm = async function() {
+  const required = [
+    { id: 'f_tipo_intervento',      label: 'Tipo intervento' },
+    { id: 'f_componente',           label: 'Componente' },
+    { id: 'f_modalita_rilevazione', label: 'Modalità rilevazione' },
+    { id: 'f_failure_mode',         label: 'Failure mode' },
+    { id: 'f_impatto_produzione',   label: 'Impatto produzione' },
+    { id: 'f_descrizione_sintomi',  label: 'Descrizione sintomi' },
+    { id: 'f_affidamento',          label: 'Affidamento' },
+    { id: 'f_azione_manutentiva',   label: 'Azione manutentiva' },
+    { id: 'f_descrizione_attivita', label: 'Descrizione attività' },
+    { id: 'f_esito_intervento',     label: 'Esito intervento' },
+    { id: 'f_data_segnalazione',    label: 'Data segnalazione' },
+    { id: 'f_data_inizio',          label: 'Data inizio esecuzione' },
+    { id: 'f_data_fine',            label: 'Data fine ripristino' },
+    { id: 'f_responsabile',         label: 'Responsabile validazione' },
+  ];
+  const missing = required.filter(r => !document.getElementById(r.id)?.value?.trim());
+  if (missing.length) { showToast('Compila: ' + missing.map(r=>r.label).join(', '), true); return; }
+
+  const squadra = collectSquadra();
+  if (!squadra.length) { showToast('Inserisci almeno il responsabile intervento', true); return; }
+
+  if (v('f_azione_manutentiva') === 'Sostituzione componente' && collectRicambi().length === 0) {
+    showToast('Inserisci almeno un ricambio per la sostituzione', true); return;
+  }
+
+  // Validate chronology
+  const ts = new Date(v('f_data_segnalazione')), ti = new Date(v('f_data_inizio')), tf = new Date(v('f_data_fine'));
+  if (ti < ts) { showToast('Inizio esecuzione non può precedere segnalazione', true); return; }
+  if (tf < ti) { showToast('Fine ripristino non può precedere inizio esecuzione', true); return; }
+
+  const btn = document.getElementById('submitBtn');
+  const spinner = document.getElementById('submitSpinner');
+  btn.disabled = true; spinner.style.display = 'block';
+  document.getElementById('submitLabel').textContent = 'Salvataggio...';
+
+  const totOre = parseFloat(document.getElementById('totale-ore-val').textContent) || 0;
+
+  const data = {
+    timestamp:              demoMode ? new Date().toISOString() : serverTimestamp(),
+    id_intervento:          v('f_id_intervento'),
+    data_apertura:          v('f_data_apertura'),
+    codice_asset:           'N210',
+    nome_asset:             '1° Nastro Trasportatore',
+    linea:                  'Linea di Raffinazione Finale',
+    tipo_intervento:        v('f_tipo_intervento'),
+    componente:             v('f_componente'),
+    modalita_rilevazione:   v('f_modalita_rilevazione'),
+    failure_mode:           v('f_failure_mode'),
+    impatto_produzione:     v('f_impatto_produzione'),
+    descrizione_sintomi:    v('f_descrizione_sintomi'),
+    affidamento:            v('f_affidamento'),
+    squadra:                squadra,
+    totale_ore_uomo:        totOre,
+    azione_manutentiva:     v('f_azione_manutentiva'),
+    componenti_sostituiti:  collectRicambi(),
+    descrizione_attivita:   v('f_descrizione_attivita'),
+    esito_intervento:       v('f_esito_intervento'),
+    data_segnalazione:      v('f_data_segnalazione'),
+    data_inizio_esecuzione: v('f_data_inizio'),
+    data_fine_ripristino:   v('f_data_fine'),
+    downtime_minuti:        parseInt(v('f_downtime')) || 0,
+    note_tecniche:          v('f_note_tecniche'),
+    segnalazione_preventiva: v('f_segnalazione_preventiva'),
+    dettaglio_segnalazione: v('f_dettaglio_segnalazione'),
+    responsabile:           v('f_responsabile'),
+    stato_record:           v('f_stato_record') || 'Bozza',
+  };
+
+  try {
+    if (demoMode) {
+      data._id = 'demo_' + Date.now();
+      window.allRecords.unshift(data);
+    } else {
+      await addDoc(collection(db, 'interventi'), data);
+      await loadStorico();
+    }
+    showToast('✓ Intervento salvato correttamente');
+    resetForm();
+    setTimeout(() => showView('storico'), 800);
+  } catch(e) {
+    showToast('Errore salvataggio: ' + e.message, true);
+  } finally {
+    btn.disabled = false; spinner.style.display = 'none';
+    document.getElementById('submitLabel').textContent = 'Salva intervento';
+  }
+};
+
+window.resetForm = function() {
+  document.querySelectorAll('#view-form input:not([readonly]), #view-form select, #view-form textarea').forEach(el => el.value = '');
+  document.getElementById('f_stato_record').value = 'Bozza';
+  document.getElementById('ricambi-section').style.display = 'none';
+  document.getElementById('dettaglio-field').classList.remove('visible');
+  document.getElementById('squadra-container').innerHTML = '';
+  document.getElementById('ricambi-container').innerHTML = '';
+  squadraRows = []; ricambiRows = [];
+  document.getElementById('totale-ore-val').textContent = '0.0';
+  ['hint_sintomi','hint_attivita','hint_note'].forEach(id => { document.getElementById(id).textContent = '0 / ' + id.split('_')[1]; });
+  generateId();
+  document.getElementById('f_data_apertura').value = formatDateTime(new Date());
+  addSquadraRow(true);
+};
+
+// ─── Storico rendering ────────────────────────────────────────────────────────
+function renderStorico(records) {
+  const body = document.getElementById('storicoBody');
+  document.getElementById('countBadge').textContent = records.length + ' record';
+  document.getElementById('emptyState').style.display = records.length ? 'none' : 'block';
+  if (!records.length) { body.innerHTML = ''; return; }
+
+  body.innerHTML = records.map((r, i) => {
+    const esitoClass = r.esito_intervento === 'Risolto' ? 'pill-ok' : r.esito_intervento === 'Non risolto' ? 'pill-danger' : 'pill-warn';
+    const statoClass = r.stato_record === 'Archiviato' ? 'pill-warn' : r.stato_record === 'Completato' ? 'pill-ok' : 'pill-info';
+    return `<tr>
+      <td class="td-mono" onclick="openDetail(${i})">${r.id_intervento || '—'}</td>
+      <td onclick="openDetail(${i})">${r.tipo_intervento || '—'}</td>
+      <td class="td-date" onclick="openDetail(${i})">${formatDate(r.data_segnalazione || r.data_apertura)}</td>
+      <td onclick="openDetail(${i})" style="max-width:160px">${r.componente ? r.componente.split('—')[1]?.trim() || r.componente : '—'}</td>
+      <td onclick="openDetail(${i})">${r.failure_mode || '—'}</td>
+      <td onclick="openDetail(${i})">${r.esito_intervento ? `<span class="pill ${esitoClass}">${r.esito_intervento}</span>` : '—'}</td>
+      <td class="td-mono" onclick="openDetail(${i})">${r.downtime_minuti ?? '—'}</td>
+      <td onclick="openDetail(${i})">${r.stato_record ? `<span class="pill ${statoClass}">${r.stato_record}</span>` : '—'}</td>
+      <td class="td-actions"><button class="btn-pdf" onclick="event.stopPropagation();exportPDF(window.allRecords[${i}])">↓ PDF</button></td>
+    </tr>`;
+  }).join('');
+}
+
+window.filterStorico = function(q) {
+  renderStorico(window.allRecords.filter(r => JSON.stringify(r).toLowerCase().includes(q.toLowerCase())));
+};
+
+// ─── Detail modal ─────────────────────────────────────────────────────────────
+window.openDetail = function(i) {
+  const r = window.allRecords[i];
+  window.currentRecord = r;
+  document.getElementById('modalTitle').textContent = r.id_intervento || 'Dettaglio intervento';
+
+  const squadraHTML = (r.squadra || []).map(m => `<tr><td>${m.nome}</td><td>${m.ruolo}</td><td>${m.ore}h</td></tr>`).join('');
+  const ricambiHTML = (r.componenti_sostituiti || []).map(c => `<tr><td class="td-mono">${c.codice}</td><td>${c.desc}</td></tr>`).join('');
+
+  document.getElementById('modalBody').innerHTML = `
+    <div class="detail-section">
+      <div class="detail-section-title">S1 — Intestazione</div>
+      <div class="detail-grid">
+        <div class="detail-item"><div class="detail-label">ID Intervento</div><div class="detail-value mono">${r.id_intervento||'—'}</div></div>
+        <div class="detail-item"><div class="detail-label">Data apertura</div><div class="detail-value">${r.data_apertura||'—'}</div></div>
+        <div class="detail-item"><div class="detail-label">Asset</div><div class="detail-value mono">${r.codice_asset||'—'} — ${r.nome_asset||''}</div></div>
+        <div class="detail-item"><div class="detail-label">Tipo intervento</div><div class="detail-value">${r.tipo_intervento||'—'}</div></div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">S2 — Anomalia rilevata</div>
+      <div class="detail-grid">
+        <div class="detail-item"><div class="detail-label">Componente</div><div class="detail-value">${r.componente||'—'}</div></div>
+        <div class="detail-item"><div class="detail-label">Modalità rilevazione</div><div class="detail-value">${r.modalita_rilevazione||'—'}</div></div>
+        <div class="detail-item"><div class="detail-label">Failure mode</div><div class="detail-value">${r.failure_mode||'—'}</div></div>
+        <div class="detail-item"><div class="detail-label">Impatto produzione</div><div class="detail-value">${r.impatto_produzione||'—'}</div></div>
+        <div class="detail-item detail-full"><div class="detail-label">Descrizione sintomi</div><div class="detail-value">${r.descrizione_sintomi||'—'}</div></div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">S3 — Esecuzione</div>
+      <div class="detail-grid">
+        <div class="detail-item"><div class="detail-label">Affidamento</div><div class="detail-value">${r.affidamento||'—'}</div></div>
+        <div class="detail-item"><div class="detail-label">Azione manutentiva</div><div class="detail-value">${r.azione_manutentiva||'—'}</div></div>
+        <div class="detail-item"><div class="detail-label">Esito</div><div class="detail-value">${r.esito_intervento||'—'}</div></div>
+        <div class="detail-item"><div class="detail-label">Totale ore/uomo</div><div class="detail-value mono">${r.totale_ore_uomo||0} h</div></div>
+        <div class="detail-item detail-full"><div class="detail-label">Descrizione attività</div><div class="detail-value">${r.descrizione_attivita||'—'}</div></div>
+      </div>
+      ${squadraHTML ? `<div class="detail-label" style="margin-bottom:6px">Squadra</div><table class="detail-table"><thead><tr><th>Nome</th><th>Ruolo</th><th>Ore</th></tr></thead><tbody>${squadraHTML}</tbody></table>` : ''}
+      ${ricambiHTML ? `<div class="detail-label" style="margin-top:10px;margin-bottom:6px">Componenti sostituiti</div><table class="detail-table"><thead><tr><th>Cod. OMAR</th><th>Descrizione</th></tr></thead><tbody>${ricambiHTML}</tbody></table>` : ''}
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">S4 — Dati temporali</div>
+      <div class="detail-grid">
+        <div class="detail-item"><div class="detail-label">Segnalazione guasto</div><div class="detail-value">${formatDate(r.data_segnalazione)}</div></div>
+        <div class="detail-item"><div class="detail-label">Inizio esecuzione</div><div class="detail-value">${formatDate(r.data_inizio_esecuzione)}</div></div>
+        <div class="detail-item"><div class="detail-label">Fine ripristino</div><div class="detail-value">${formatDate(r.data_fine_ripristino)}</div></div>
+        <div class="detail-item"><div class="detail-label">Downtime</div><div class="detail-value mono">${r.downtime_minuti ?? '—'} min</div></div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">S5 — Chiusura</div>
+      <div class="detail-grid">
+        <div class="detail-item"><div class="detail-label">Responsabile</div><div class="detail-value">${r.responsabile||'—'}</div></div>
+        <div class="detail-item"><div class="detail-label">Stato record</div><div class="detail-value">${r.stato_record||'—'}</div></div>
+        ${r.segnalazione_preventiva ? `<div class="detail-item detail-full"><div class="detail-label">Segnalazione preventiva</div><div class="detail-value">${r.segnalazione_preventiva} ${r.dettaglio_segnalazione ? '— '+r.dettaglio_segnalazione : ''}</div></div>` : ''}
+        ${r.note_tecniche ? `<div class="detail-item detail-full"><div class="detail-label">Note tecniche</div><div class="detail-value">${r.note_tecniche}</div></div>` : ''}
+      </div>
+    </div>
+  `;
+  document.getElementById('detailModal').classList.add('open');
+};
+
+window.closeModal = function() { document.getElementById('detailModal').classList.remove('open'); };
+
+// ─── Export PDF ───────────────────────────────────────────────────────────────
+window.exportPDF = function(r) {
+  if (!r) { showToast('Record non trovato', true); return; }
+  if (!window.jspdf) { showToast('Libreria PDF non ancora caricata, riprova', true); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const W = 210, ml = 18, mr = 18, cw = W - ml - mr;
+  let y = 0;
+
+  // helpers
+  const chk = (need = 20) => { if (y + need > 275) { doc.addPage(); y = 20; } };
+  const line = () => { doc.setDrawColor(42, 51, 71); doc.line(ml, y, W - mr, y); y += 4; };
+  const txt = (t, x, yy, opts = {}) => {
+    doc.setFontSize(opts.size || 10);
+    doc.setFont('helvetica', opts.bold ? 'bold' : 'normal');
+    doc.setTextColor(...(opts.color || [232, 237, 245]));
+    if (opts.wrap) {
+      const lines = doc.splitTextToSize(String(t || '—'), opts.maxW || cw);
+      doc.text(lines, x, yy);
+      return lines.length * (opts.size || 10) * 0.4;
+    }
+    doc.text(String(t || '—'), x, yy);
+    return 0;
+  };
+
+  // Background
+  doc.setFillColor(15, 17, 23);
+  doc.rect(0, 0, 210, 297, 'F');
+
+  // Header bar
+  doc.setFillColor(22, 27, 39);
+  doc.rect(0, 0, 210, 28, 'F');
+  doc.setFillColor(0, 212, 161);
+  doc.rect(0, 0, 4, 28, 'F');
+
+  y = 12;
+  txt('REPORT INTERVENTO MANUTENTIVO', ml + 6, y, { size: 13, bold: true, color: [0, 212, 161] });
+  txt('Impianto di Compostaggio di Faltona — N210 Nastro Trasportatore', ml + 6, y + 7, { size: 8, color: [138, 149, 170] });
+
+  // ID + stato top right
+  txt(r.id_intervento || '—', W - mr - 40, 11, { size: 10, bold: true, color: [0, 212, 161] });
+  txt('Stato: ' + (r.stato_record || '—'), W - mr - 40, 18, { size: 7, color: [138, 149, 170] });
+
+  y = 36;
+
+  const sectionTitle = (label) => {
+    chk(14);
+    doc.setFillColor(30, 37, 53);
+    doc.rect(ml, y - 4, cw, 10, 'F');
+    doc.setFillColor(0, 212, 161);
+    doc.rect(ml, y - 4, 3, 10, 'F');
+    txt(label, ml + 6, y + 2, { size: 9, bold: true, color: [0, 212, 161] });
+    y += 10;
+  };
+
+  const row2 = (l1, v1, l2, v2) => {
+    chk(12);
+    const hw = cw / 2 - 2;
+    txt(l1, ml, y, { size: 7, color: [74, 85, 104] });
+    txt(l2, ml + hw + 4, y, { size: 7, color: [74, 85, 104] });
+    y += 4;
+    txt(v1 || '—', ml, y, { size: 9, color: [232, 237, 245] });
+    txt(v2 || '—', ml + hw + 4, y, { size: 9, color: [232, 237, 245] });
+    y += 7;
+  };
+
+  const rowFull = (label, value, wrap = false) => {
+    chk(16);
+    txt(label, ml, y, { size: 7, color: [74, 85, 104] });
+    y += 4;
+    if (wrap) {
+      const h = txt(value || '—', ml, y, { size: 9, color: [232, 237, 245], wrap: true, maxW: cw });
+      y += Math.max(h * 4.5, 7);
+    } else {
+      txt(value || '—', ml, y, { size: 9, color: [232, 237, 245] });
+      y += 7;
+    }
+  };
+
+  // S1
+  sectionTitle('SEZIONE 1 — INTESTAZIONE');
+  row2('ID Intervento', r.id_intervento, 'Data apertura record', r.data_apertura);
+  row2('Asset', `${r.codice_asset} — ${r.nome_asset}`, 'Tipo intervento', r.tipo_intervento);
+  rowFull('Linea / Sistema', r.linea);
+  y += 2;
+
+  // S2
+  sectionTitle('SEZIONE 2 — ANOMALIA RILEVATA');
+  row2('Componente / sottosistema', r.componente, 'Modalità di rilevazione', r.modalita_rilevazione);
+  row2('Failure mode', r.failure_mode, 'Impatto sulla produzione', r.impatto_produzione);
+  rowFull('Descrizione sintomi', r.descrizione_sintomi, true);
+  y += 2;
+
+  // S3
+  sectionTitle('SEZIONE 3 — ESECUZIONE');
+  row2('Affidamento', r.affidamento, 'Azione manutentiva', r.azione_manutentiva);
+  row2('Esito intervento', r.esito_intervento, 'Totale ore/uomo', (r.totale_ore_uomo || 0) + ' h');
+  rowFull('Descrizione attività svolta', r.descrizione_attivita, true);
+
+  // Squadra table
+  if (r.squadra && r.squadra.length) {
+    chk(20);
+    txt('SQUADRA DI INTERVENTO', ml, y, { size: 7, color: [74, 85, 104] }); y += 5;
+    doc.setFillColor(30, 37, 53);
+    doc.rect(ml, y - 3, cw, 7, 'F');
+    txt('Nome', ml + 2, y + 1, { size: 7, bold: true, color: [138, 149, 170] });
+    txt('Ruolo', ml + 64, y + 1, { size: 7, bold: true, color: [138, 149, 170] });
+    txt('Ore', ml + 140, y + 1, { size: 7, bold: true, color: [138, 149, 170] });
+    y += 8;
+    r.squadra.forEach(m => {
+      chk(8);
+      txt(m.nome, ml + 2, y, { size: 8.5 });
+      txt(m.ruolo, ml + 64, y, { size: 8.5 });
+      txt(m.ore + 'h', ml + 140, y, { size: 8.5, color: [0, 212, 161] });
+      y += 6;
+    });
+    y += 2;
+  }
+
+  // Ricambi table
+  if (r.componenti_sostituiti && r.componenti_sostituiti.length) {
+    chk(20);
+    txt('COMPONENTI SOSTITUITI', ml, y, { size: 7, color: [74, 85, 104] }); y += 5;
+    doc.setFillColor(30, 37, 53);
+    doc.rect(ml, y - 3, cw, 7, 'F');
+    txt('Cod. OMAR', ml + 2, y + 1, { size: 7, bold: true, color: [138, 149, 170] });
+    txt('Descrizione', ml + 44, y + 1, { size: 7, bold: true, color: [138, 149, 170] });
+    y += 8;
+    r.componenti_sostituiti.forEach(c => {
+      chk(8);
+      txt(c.codice, ml + 2, y, { size: 8.5, color: [0, 212, 161] });
+      txt(c.desc, ml + 44, y, { size: 8.5 });
+      y += 6;
+    });
+    y += 2;
+  }
+
+  // S4
+  sectionTitle('SEZIONE 4 — DATI TEMPORALI');
+  row2('Segnalazione guasto', formatDate(r.data_segnalazione), 'Inizio esecuzione', formatDate(r.data_inizio_esecuzione));
+  row2('Fine ripristino', formatDate(r.data_fine_ripristino), 'Downtime asset', (r.downtime_minuti ?? '—') + ' min');
+  y += 2;
+
+  // S5
+  sectionTitle('SEZIONE 5 — CHIUSURA E VALIDAZIONE');
+  row2('Responsabile validazione', r.responsabile, 'Stato record', r.stato_record);
+  if (r.segnalazione_preventiva) {
+    row2('Segnalazione preventiva', r.segnalazione_preventiva, 'Dettaglio', r.dettaglio_segnalazione || '—');
+  }
+  if (r.note_tecniche) rowFull('Note tecniche', r.note_tecniche, true);
+
+  // Footer
+  const pages = doc.getNumberOfPages();
+  for (let i = 1; i <= pages; i++) {
+    doc.setPage(i);
+    doc.setFillColor(22, 27, 39);
+    doc.rect(0, 285, 210, 12, 'F');
+    txt('Generato il ' + formatDate(new Date().toISOString()), ml, 291, { size: 7, color: [74, 85, 104] });
+    txt('Plures PoC — Faltona 2026', W/2, 291, { size: 7, color: [74, 85, 104] });
+    txt(`${i}/${pages}`, W - mr, 291, { size: 7, color: [74, 85, 104] });
+  }
+
+  doc.save(`${r.id_intervento || 'intervento'}_report.pdf`);
+  showToast('✓ PDF generato');
+};
+
+// ─── Export XLSX ──────────────────────────────────────────────────────────────
+window.exportXLSX = function() {
+  if (!window.allRecords.length) { showToast('Nessun record da esportare', true); return; }
+  if (!window.XLSX) { showToast('Libreria XLSX non caricata, riprova', true); return; }
+
+  const rows = window.allRecords.map(r => ({
+    'ID Intervento':            r.id_intervento || '',
+    'Data apertura':            r.data_apertura || '',
+    'Codice asset':             r.codice_asset || 'N210',
+    'Nome asset':               r.nome_asset || '',
+    'Linea':                    r.linea || '',
+    'Tipo intervento':          r.tipo_intervento || '',
+    'Componente':               r.componente || '',
+    'Modalità rilevazione':     r.modalita_rilevazione || '',
+    'Failure mode':             r.failure_mode || '',
+    'Impatto produzione':       r.impatto_produzione || '',
+    'Descrizione sintomi':      r.descrizione_sintomi || '',
+    'Affidamento':              r.affidamento || '',
+    'Squadra (nomi)':           (r.squadra || []).map(m => m.nome).join('; '),
+    'Squadra (ruoli)':          (r.squadra || []).map(m => m.ruolo).join('; '),
+    'Totale ore/uomo':          r.totale_ore_uomo || 0,
+    'Azione manutentiva':       r.azione_manutentiva || '',
+    'Componenti sostituiti':    (r.componenti_sostituiti || []).map(c => `${c.codice} - ${c.desc}`).join('; '),
+    'Descrizione attività':     r.descrizione_attivita || '',
+    'Esito intervento':         r.esito_intervento || '',
+    'Data segnalazione':        r.data_segnalazione || '',
+    'Data inizio esecuzione':   r.data_inizio_esecuzione || '',
+    'Data fine ripristino':     r.data_fine_ripristino || '',
+    'Downtime (min)':           r.downtime_minuti || 0,
+    'Note tecniche':            r.note_tecniche || '',
+    'Segnalazione preventiva':  r.segnalazione_preventiva || '',
+    'Dettaglio segnalazione':   r.dettaglio_segnalazione || '',
+    'Responsabile validazione': r.responsabile || '',
+    'Stato record':             r.stato_record || '',
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+
+  // Column widths
+  ws['!cols'] = [
+    {wch:18},{wch:18},{wch:10},{wch:22},{wch:28},{wch:22},{wch:30},{wch:22},{wch:20},
+    {wch:22},{wch:50},{wch:16},{wch:40},{wch:40},{wch:14},{wch:22},{wch:40},{wch:60},
+    {wch:14},{wch:18},{wch:18},{wch:18},{wch:14},{wch:50},{wch:30},{wch:40},{wch:24},{wch:14}
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Registro Manutenzioni N210');
+
+  const date = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `registro_manutenzioni_N210_${date}.xlsx`);
+  showToast('✓ Registro XLSX esportato');
+};
+
+// ─── Utilities ────────────────────────────────────────────────────────────────
+function generateId() {
+  const d = new Date();
+  const date = d.toISOString().slice(0,10).replace(/-/g,'');
+  const seq = String(Math.floor(Math.random()*900)+100);
+  document.getElementById('f_id_intervento').value = `INT-${date}-${seq}`;
+}
+
+function formatDateTime(d) {
+  return d.toLocaleString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}).replace(',','');
+}
+
+function formatDate(d) {
+  if (!d) return '—';
+  try { return new Date(d).toLocaleString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
+  catch { return d; }
+}
+
+function v(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; }
+
+function showToast(msg, err=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = err ? 'error' : '';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+function setStatus(color, text) {
+  document.getElementById('statusDot').style.cssText = `background:${color};box-shadow:0 0 6px ${color}`;
+  document.getElementById('statusText').textContent = text;
+}
+
+window.showView = function(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  document.querySelectorAll('.nav-tab')[name === 'form' ? 0 : 1].classList.add('active');
+  if (name === 'storico') renderStorico(window.allRecords);
+};
+
+window.toggleSection = function(id) { document.getElementById(id).classList.toggle('collapsed'); };
+
+function getDemoData() {
+  return [
+    {
+      _id:'demo1', id_intervento:'INT-20260415-001', data_apertura:'15/04/2026 09:30',
+      codice_asset:'240005200100000', nome_asset:'Nastro a Tapparelle TNT 1400x6000', linea:'Linea di Raffinazione Finale',
+      tipo_intervento:'Correttivo a guasto', componente:'3.7 · 30044161 — Asse di traino D=110 x TNT',
+      modalita_rilevazione:'Allarme SCADA', failure_mode:'Rottura meccanica',
+      impatto_produzione:'Fermo linea',
+      descrizione_sintomi:'Deviazione del nastro verso destra nella zona centrale. Rumore metallico intermittente dal lato traino. Allarme SCADA stato utenza = 2.',
+      affidamento:'Interno (Make)',
+      squadra:[{nome:'Luca Rosi',ruolo:'Responsabile intervento',ore:3},{nome:'Marco Bianchi',ruolo:'Manutentore',ore:3}],
+      totale_ore_uomo:6, azione_manutentiva:'Sostituzione componente',
+      componenti_sostituiti:[{codice:'30044161',desc:'Asse di traino D=110 x TNT — IR-24052-C-00114'}],
+      descrizione_attivita:'Fermata macchina e messa in sicurezza LOTO. Smontaggio carter protezione lato traino. Rimozione tamburo di traino esistente. Montaggio nuovo tamburo cod. OMAR 40001655. Rimontaggio carter. Test avvio a vuoto: nastro in asse, nessun rumore anomalo.',
+      esito_intervento:'Risolto',
+      data_segnalazione:'2026-04-15T07:15', data_inizio_esecuzione:'2026-04-15T08:00', data_fine_ripristino:'2026-04-15T11:30',
+      downtime_minuti:255, note_tecniche:'Supporto cuscinetto traino (N210-C04) presenta leggero gioco. Monitorare.', segnalazione_preventiva:'Verificare componente', dettaglio_segnalazione:'Supporto cuscinetto traino N210-C04 — verificare entro 30 giorni',
+      responsabile:'Niccolò Frasi', stato_record:'Completato',
+    },
+    {
+      _id:'demo2', id_intervento:'INT-20260408-047', data_apertura:'08/04/2026 14:00',
+      codice_asset:'240005200100000', nome_asset:'Nastro a Tapparelle TNT 1400x6000', linea:'Linea di Raffinazione Finale',
+      tipo_intervento:'Preventivo', componente:'3.5 · 10024615 — Tappeto in gomma antiolio Sv. 1400x13600 aperto',
+      modalita_rilevazione:'Ispezione visiva', failure_mode:'Usura',
+      impatto_produzione:'Nessun impatto operativo',
+      descrizione_sintomi:'Durante ispezione programmata riscontrata usura superficiale del tappeto nastro nel tratto centrale. Nessun cedimento strutturale.',
+      affidamento:'Interno (Make)',
+      squadra:[{nome:'Marco Bianchi',ruolo:'Responsabile intervento',ore:1.5}],
+      totale_ore_uomo:1.5, azione_manutentiva:'Ispezione',
+      componenti_sostituiti:[], descrizione_attivita:'Ispezione visiva completa del tappeto nastro. Misurazione spessore in 5 punti. Usura entro limiti operativi ma da monitorare.',
+      esito_intervento:'Risolto',
+      data_segnalazione:'2026-04-08T13:45', data_inizio_esecuzione:'2026-04-08T14:00', data_fine_ripristino:'2026-04-08T15:30',
+      downtime_minuti:105, note_tecniche:'', segnalazione_preventiva:'Pianificare intervento preventivo', dettaglio_segnalazione:'Sostituzione tappeto nastro da pianificare entro 3 mesi',
+      responsabile:'Luca Rosi', stato_record:'Archiviato',
+    },
+  ];
+}
+
+// ─── Bootstrap — runs AFTER all window.* assignments ────────────────────────
+(function init() {
+  // Pre-populate form
+  generateId();
+  document.getElementById('f_data_apertura').value = formatDateTime(new Date());
+  window.addSquadraRow(true);
+
+  // Char counters
+  [
+    ['f_descrizione_sintomi', 'hint_sintomi', 500],
+    ['f_descrizione_attivita', 'hint_attivita', 700],
+    ['f_note_tecniche', 'hint_note', 600],
+  ].forEach(([fid, hid, max]) => {
+    const el = document.getElementById(fid);
+    const hint = document.getElementById(hid);
+    if (el && hint) el.addEventListener('input', () => {
+      hint.textContent = `${el.value.length} / ${max} caratteri`;
+    });
+  });
+
+  // Check for saved Firebase config
+  const savedCfg = localStorage.getItem('fb_config');
+  if (savedCfg) {
+    try {
+      const cfg = JSON.parse(savedCfg);
+      // Pre-fill fields
+      const map = { cfg_apiKey:'apiKey', cfg_authDomain:'authDomain', cfg_projectId:'projectId', cfg_appId:'appId' };
+      Object.entries(map).forEach(([elId, cfgKey]) => {
+        const el = document.getElementById(elId);
+        if (el && cfg[cfgKey]) el.value = cfg[cfgKey];
+      });
+      initFirebase(cfg);
+    } catch(e) {
+      localStorage.removeItem('fb_config');
+      // leave modal visible
+    }
+  }
+})();
+</script>
+</body>
+</html>
