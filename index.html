@@ -510,6 +510,8 @@ tbody td{padding:11px 14px;font-size:13px;color:var(--text);max-width:200px;over
       <thead>
         <tr>
           <th>ID Intervento</th>
+          <th>Codice asset</th>
+          <th>Nome asset</th>
           <th>Tipo</th>
           <th>Data segnalazione</th>
           <th>Componente</th>
@@ -1044,6 +1046,8 @@ function renderStorico(records) {
     const statoClass = r.stato_record === 'Archiviato' ? 'pill-warn' : r.stato_record === 'Completato' ? 'pill-ok' : 'pill-info';
     return `<tr>
       <td class="td-mono" onclick="openDetail(${i})">${r.id_intervento || '—'}</td>
+      <td class="td-mono" onclick="openDetail(${i})">${r.codice_asset || '—'}</td>
+      <td onclick="openDetail(${i})">${r.nome_asset || '—'}</td>
       <td onclick="openDetail(${i})">${r.tipo_intervento || '—'}</td>
       <td class="td-date" onclick="openDetail(${i})">${formatDate(r.data_segnalazione || r.data_apertura)}</td>
       <td onclick="openDetail(${i})" style="max-width:160px">${r.componente ? r.componente.split('—')[1]?.trim() || r.componente : '—'}</td>
