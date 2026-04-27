@@ -212,7 +212,7 @@ tbody td{padding:11px 14px;font-size:13px;color:var(--text);max-width:200px;over
 <!-- ═══════════════════════ FORM VIEW ═══════════════════════ -->
 <div class="view active" id="view-form">
   <div class="form-header">
-    <div class="asset-badge">▣ <span>N210 — 1° Nastro Trasportatore · Linea di Raffinazione Finale</span></div>
+    <div class="asset-badge" id="assetBadge">▣ <span id="assetBadgeText">Seleziona un asset per iniziare</span></div>
     <div class="form-title">Consuntivazione intervento</div>
     <div class="form-subtitle">Compila le sezioni per registrare l'intervento nel sistema</div>
   </div>
@@ -237,15 +237,24 @@ tbody td{padding:11px 14px;font-size:13px;color:var(--text);max-width:200px;over
           <input type="text" id="f_data_apertura" readonly>
         </div>
         <div class="field">
-          <label>Codice asset <span class="auto-tag">PRECOMPILATO</span></label>
-          <input type="text" id="f_codice_asset" value="N210" readonly>
+          <label>Codice asset<span class="req">*</span></label>
+          <select id="f_codice_asset" onchange="onAssetChange()">
+            <option value="">— Seleziona asset —</option>
+            <option value="M110">M110</option>
+            <option value="M210">M210</option>
+            <option value="M310">M310</option>
+            <option value="M410.1">M410.1</option>
+            <option value="M410.2">M410.2</option>
+            <option value="M510">M510</option>
+            <option value="M610">M610</option>
+          </select>
         </div>
         <div class="field">
-          <label>Nome asset <span class="auto-tag">PRECOMPILATO</span></label>
-          <input type="text" id="f_nome_asset" value="1° Nastro Trasportatore" readonly>
+          <label>Nome asset <span class="auto-tag">AUTO</span></label>
+          <input type="text" id="f_nome_asset" readonly placeholder="Seleziona codice asset...">
         </div>
         <div class="field field-full">
-          <label>Linea / Sistema <span class="auto-tag">PRECOMPILATO</span></label>
+          <label>Linea / Sistema <span class="auto-tag">AUTO</span></label>
           <input type="text" id="f_linea" value="Linea di Raffinazione Finale" readonly>
         </div>
         <div class="field field-full">
@@ -376,9 +385,9 @@ tbody td{padding:11px 14px;font-size:13px;color:var(--text);max-width:200px;over
           <div class="totale-ore">Totale ore/uomo: <span class="totale-ore-val" id="totale-ore-val">0.0</span> h</div>
         </div>
 
-        <!-- COMPONENTI SOSTITUITI (condizionale) -->
+        <!-- COMPONENTI SOSTITUITI / RIPARATI (condizionale) -->
         <div class="field field-full" id="ricambi-section" style="display:none">
-          <label>Componenti sostituiti <span class="req">*</span></label>
+          <label>Componenti sostituiti / riparati <span class="req">*</span></label>
           <div class="repeat-container" id="ricambi-container"></div>
           <button class="btn-add-row" onclick="addRicambioRow()">+ Aggiungi ricambio</button>
         </div>
@@ -654,64 +663,179 @@ window.addSquadraRow = function(isFirst = false) {
   if (isFirst) document.getElementById(`sq-ruolo-${id}`).value = 'Responsabile intervento';
 };
 
-const RICAMBI_LOOKUP = {
-  '10024882': 'Interruttore induttivo controllagiri',
-  '10024624': 'Motoriduttore da 7,5 kW',
-  '10017978': 'Supporto cuscinetto ø85',
-  '10024625': 'Motoriduttore da 1,1 kW',
-  '10024615': 'Tappeto in gomma antiolio Sv. 1400x13600 aperto',
-  '30044160': 'Asse di rinvio D=70 x TNT — IR-24052-C-00113',
-  '30044161': 'Asse di traino D=110 x TNT — IR-24052-C-00114',
-  '30044163': 'Corona di traino P=125 — IR-24052-C-00115',
-  '30044164': 'Corona di rinvio P=125 con linguetta — IR-24052-C-00117',
-  '30044165': 'Corona di rinvio P=125 — IR-24052-C-00118',
-  '10019057': 'Supporto SNL 520-617',
-  '10013593': 'Cuscinetto 22220 EK',
-  '10019224': 'Ghiera H 320',
-  '10024614': 'Guarnizione TSN 520 L',
-  '10019057': 'Coperchio ASNH 520-617',
-  'IR-24052-C-00176': 'Tapparella di giunzione completa di piatto IR-24052-C-00173',
-  'IR-24052-C-00175': 'Tapparella fix tappeto completa di piatto fix IR-24052-C-00172',
-  'IR-24052-C-00174': 'Tapparella tipica',
-  '10091031': 'Catena a rulli (quantità in metri)',
-  '10024520': 'Maglia di giunzione per catena',
+// ─── Asset master data ────────────────────────────────────────────────────────
+const ASSET_NAMES = {
+  'M110':   'Nastro Alimentatore',
+  'M210':   'Nastro Alimentazione Vaglio FF',
+  'M310':   'Vaglio Flip Flow',
+  'M410.1': 'Nastro Sottovaglio',
+  'M410.2': 'Nastro Scarico Sottovaglio a Cumulo',
+  'M510':   'Nastro Alimentazione Vaglio a Dischi',
+  'M610':   'Vaglio a Dischi',
+};
+
+// Spare-parts catalogue per asset: [ [code, description], ... ]
+const RICAMBI_BY_ASSET = {
+  'M110': [
+    ['10024882', 'Interruttore induttivo controllagiri'],
+    ['10024624', 'Motoriduttore da 7,5 kW'],
+    ['10017978', 'Supporto cuscinetto ø85'],
+    ['10024625', 'Motoriduttore da 1,1 kW'],
+    ['10024615', 'Tappeto in gomma antiolio Sv. 1400x13600 aperto'],
+    ['30044160',  'Asse di rinvio D=70 x TNT — IR-24052-C-00113'],
+    ['30044161',  'Asse di traino D=110 x TNT — IR-24052-C-00114'],
+    ['30044163',  'Corona di traino P=125 — IR-24052-C-00115'],
+    ['30044164',  'Corona di rinvio P=125 con linguetta — IR-24052-C-00117'],
+    ['30044165',  'Corona di rinvio P=125 — IR-24052-C-00118'],
+    ['10019057',  'Supporto SNL 520-617'],
+    ['10013593',  'Cuscinetto 22220 EK'],
+    ['10019224',  'Ghiera H 320'],
+    ['10024614',  'Guarnizione TSN 520 L'],
+    ['ASNH520',   'Coperchio ASNH 520-617'],
+    ['IR-24052-C-00176', 'Tapparella di giunzione completa di piatto — IR-24052-C-00173'],
+    ['IR-24052-C-00175', 'Tapparella fix tappeto completa di piatto fix — IR-24052-C-00172'],
+    ['IR-24052-C-00174', 'Tapparella tipica'],
+    ['10091031',  'Catena a rulli (quantità in metri)'],
+    ['10024520',  'Maglia di giunzione per catena'],
+  ],
+  'M210': [
+    ['10024626',  'Motoriduttore da 7,5 kW'],
+    ['10024616',  'Tappeto in gomma antiolio Sv. 1400x37250 mm aperto — giunzione in cantiere'],
+    ['10020324',  'Supporto cuscinetto Ø55'],
+    ['10018987',  'Calettatore autocentrante 60x90'],
+    ['10023107A', 'Bavetta arancione H=120 SP=10 (quantità in metri)'],
+    ['10023107B', 'Bavetta arancione L=1430 H=60 SP=10'],
+    ['10024692',  'Rullo di andata centrale Ø89'],
+    ['10024693',  'Rullo di andata laterale Ø89'],
+    ['10024218',  'Rullo Ø60 L=1450 con dischi gommati'],
+    ['10018814',  'Rullo guida Ø60'],
+    ['10024882',  'Interruttore induttivo controllagiri'],
+    ['10024630',  'Interruttore di sicurezza a fune'],
+    ['10024375',  'Raschiatore di traino'],
+    ['30044292',  'Albero di traino ø60'],
+    ['40001655',  'Tamburo di traino L=1480 gommato'],
+    ['30044297',  'Tamburo di rinvio 1480'],
+    ['30044293',  'Albero di rinvio 1720'],
+  ],
+  'M310': [
+    ['10024308',  'Tappeto non perforato — XEXK136382'],
+    ['10024309',  'Tappeto foro 9x9 — XEXK154304'],
+    ['10024310',  'Tappeto foro 7x7 — XEXK154303'],
+    ['10024312',  'Kit servizio eccentrico 2×cuscinetto, 2×guarnizione, 6×O-ring — EOAU1060'],
+    ['10024313',  'Bordo in gomma Bivitec — XEKP1517'],
+    ['10024315',  'Molla di gomma Marsh Mellow — XEFG1003'],
+    ['10024314',  'Gomma di spinta — XEFG1012A'],
+    ['10024316',  'Gomma di usura — EURW1108'],
+    ['LISCENOMAR','Listello centrale per 1 set completo di tappeti — XEKP0006'],
+    ['MOT15KW',   'Motore elettrico da 15 kW — MAM2268'],
+    ['CIN1800',   'Cinghie di trasmissione — MGV17180S'],
+  ],
+  'M410.1': [
+    ['10024627',  'Motoriduttore da 4 kW'],
+    ['10024617',  'Tappeto in gomma antiolio Sv. 1400x15250 mm aperto chiuso'],
+    ['10020324',  'Supporto cuscinetto Ø55'],
+    ['10018987',  'Calettatore autocentrante 60x90'],
+    ['10023107A', 'Bavetta arancione H=120 SP=10 (quantità in metri)'],
+    ['10023107B', 'Bavetta arancione L=1430 H=60 SP=10'],
+    ['10024692',  'Rullo di andata centrale Ø89'],
+    ['10024693',  'Rullo di andata laterale Ø89'],
+    ['10024694',  'Rullo di ritorno Ø89 L1458'],
+    ['10018814',  'Rullo guida Ø60'],
+    ['10024882',  'Interruttore induttivo controllagiri'],
+    ['10024630',  'Interruttore di sicurezza a fune'],
+    ['10024375',  'Raschiatore di traino'],
+    ['30044294',  'Albero di traino ø60'],
+    ['40001655',  'Tamburo di traino L=1480 gommato'],
+    ['30044297',  'Tamburo di rinvio 1480'],
+    ['30044293',  'Albero di rinvio 1720'],
+  ],
+  'M410.2': [
+    ['10024628',  'Motoriduttore da 2,2 kW'],
+    ['10024618',  'Tappeto in gomma antiolio Sv. 800x10200 mm chiuso'],
+    ['10020324',  'Supporto cuscinetto Ø55'],
+    ['10018987',  'Calettatore autocentrante 60x90'],
+    ['10023107A', 'Bavetta arancione H=120 SP=10 (quantità in metri)'],
+    ['10023107B', 'Bavetta arancione L=820 H=60 SP=10'],
+    ['10024693',  'Rullo di andata laterale Ø89'],
+    ['10024695',  'Rullo di ritorno Ø89 L858'],
+    ['10018814',  'Rullo guida Ø60'],
+    ['10024882',  'Interruttore induttivo controllagiri'],
+    ['10024630',  'Interruttore di sicurezza a fune'],
+    ['10024377',  'Raschiatore di traino'],
+    ['30044267',  'Albero di traino ø60'],
+    ['40001653',  'Tamburo di traino L=880 gommato'],
+    ['30044271',  'Tamburo di rinvio 880'],
+    ['30044272',  'Albero di rinvio 1120'],
+  ],
+  'M510': [
+    ['10024629',  'Motoriduttore da 5,5 kW'],
+    ['10024619',  'Tappeto in gomma antiolio Sv. 1400x22750 mm chiuso'],
+    ['10020324',  'Supporto cuscinetto Ø55'],
+    ['10018987',  'Calettatore autocentrante 60x90'],
+    ['10023107A', 'Bavetta arancione H=120 SP=10 (quantità in metri)'],
+    ['10023107B', 'Bavetta arancione L=1430 H=60 SP=10'],
+    ['10024692',  'Rullo di andata centrale Ø89'],
+    ['10024693',  'Rullo di andata laterale Ø89'],
+    ['10024694',  'Rullo di ritorno Ø89 L1458'],
+    ['10018814',  'Rullo guida Ø60'],
+    ['10024882',  'Interruttore induttivo controllagiri'],
+    ['10024630',  'Interruttore di sicurezza a fune'],
+    ['10024375',  'Raschiatore di traino'],
+    ['30044292',  'Albero di traino ø60'],
+    ['40001655',  'Tamburo di traino L=1480 gommato'],
+    ['30044297',  'Tamburo di rinvio 1480'],
+    ['30044293',  'Albero di rinvio 1720'],
+  ],
+  'M610': [
+    ['10024319',  'Albero a dischi S60 ATEX DST 5000x1600 — 200-01-110'],
+    ['10024320',  'Albero a dischi S60 ATEX DST 5000x1600 — 200-01-111'],
+    ['10024321',  'Kit catena di trasmissione con catena motore DST 5000x1600 — 201-01-100'],
+    ['10024322',  'Supporto DST 5000x1600 — 202-01-208'],
+    ['10024323',  'Pignone DST 5000x1600 — 201-02-420'],
+    ['10024324',  'Catena trasmissione con magli di giunzione DST 5000x1600 — 201-04-034'],
+    ['MOTVADIS',  'Motoriduttore SEW ATEX — MO-200-EX'],
+    ['CAVADIS',   'Catena singola — 3000V0913'],
+  ],
+};
+
+function getRicambiOpts(assetCode) {
+  const list = RICAMBI_BY_ASSET[assetCode] || [];
+  let html = '<option value="">— Seleziona ricambio —</option>';
+  list.forEach(([code, desc]) => {
+    html += `<option value="${code}">${code} — ${desc}</option>`;
+  });
+  if (!list.length) html += '<option value="" disabled>Seleziona prima un asset</option>';
+  return html;
+}
+
+window.onAssetChange = function() {
+  const code = document.getElementById('f_codice_asset').value;
+  const nome = document.getElementById('f_nome_asset');
+  nome.value = code ? ASSET_NAMES[code] : '';
+  // Update header badge
+  const badge = document.getElementById('assetBadgeText');
+  if (badge) badge.textContent = code ? `${code} — ${ASSET_NAMES[code]} · Linea di Raffinazione Finale` : 'Seleziona un asset per iniziare';
+  // Refresh any already-open ricambio rows
+  ricambiRows.forEach(id => {
+    const sel = document.getElementById('rc-sel-' + id);
+    if (sel) { sel.innerHTML = getRicambiOpts(code); }
+  });
 };
 
 window.addRicambioRow = function() {
   const id = Date.now();
   ricambiRows.push(id);
+  const assetCode = document.getElementById('f_codice_asset').value;
   const c = document.getElementById('ricambi-container');
   const div = document.createElement('div');
   div.className = 'repeat-row ricambio-row';
   div.id = 'rcrow-' + id;
-  const opts = `<option value="">— Seleziona ricambio —</option>
-<option value="10024882">10024882 — Interruttore induttivo controllagiri</option>
-<option value="10024624">10024624 — Motoriduttore da 7,5 kW</option>
-<option value="10017978">10017978 — Supporto cuscinetto ø85</option>
-<option value="10024625">10024625 — Motoriduttore da 1,1 kW</option>
-<option value="10024615">10024615 — Tappeto in gomma antiolio Sv. 1400x13600 aperto</option>
-<option value="30044160">30044160 — Asse di rinvio D=70 x TNT — IR-24052-C-00113</option>
-<option value="30044161">30044161 — Asse di traino D=110 x TNT — IR-24052-C-00114</option>
-<option value="30044163">30044163 — Corona di traino P=125 — IR-24052-C-00115</option>
-<option value="30044164">30044164 — Corona di rinvio P=125 con linguetta — IR-24052-C-00117</option>
-<option value="30044165">30044165 — Corona di rinvio P=125 — IR-24052-C-00118</option>
-<option value="10019057">10019057 — Supporto SNL 520-617</option>
-<option value="10013593">10013593 — Cuscinetto 22220 EK</option>
-<option value="10019224">10019224 — Ghiera H 320</option>
-<option value="10024614">10024614 — Guarnizione TSN 520 L</option>
-<option value="10019057">10019057 — Coperchio ASNH 520-617</option>
-<option value="IR-24052-C-00176">IR-24052-C-00176 — Tapparella di giunzione completa di piatto IR-24052-C-00173</option>
-<option value="IR-24052-C-00175">IR-24052-C-00175 — Tapparella fix tappeto completa di piatto fix IR-24052-C-00172</option>
-<option value="IR-24052-C-00174">IR-24052-C-00174 — Tapparella tipica</option>
-<option value="10091031">10091031 — Catena a rulli (quantità in metri)</option>
-<option value="10024520">10024520 — Maglia di giunzione per catena</option>
-`;
   div.innerHTML = `
     <div style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr 28px;gap:8px;align-items:end">
       <div>
         <div class="repeat-row-label">Ricambio (Codice OMAR)</div>
         <select id="rc-sel-${id}" onchange="onRicambioSelect(${id})" style="background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--sans);font-size:12px;padding:6px 10px;width:100%">
-          ${opts}
+          ${getRicambiOpts(assetCode)}
         </select>
       </div>
       <div>
@@ -725,14 +849,13 @@ window.addRicambioRow = function() {
 };
 
 window.onRicambioSelect = function(id) {
-  const sel = document.getElementById('rc-sel-' + id);
+  const sel  = document.getElementById('rc-sel-'  + id);
   const desc = document.getElementById('rc-desc-' + id);
   const code = sel.value;
-  if (code && RICAMBI_LOOKUP[code]) {
-    desc.value = RICAMBI_LOOKUP[code];
-  } else {
-    desc.value = '';
-  }
+  const assetCode = document.getElementById('f_codice_asset').value;
+  const list = RICAMBI_BY_ASSET[assetCode] || [];
+  const match = list.find(([c]) => c === code);
+  desc.value = match ? match[1] : '';
 };
 
 window.removeRow = function(type, divId, rowId) {
@@ -756,7 +879,8 @@ window.calcTotaleOre = function() {
 window.toggleRicambi = function() {
   const val = document.getElementById('f_azione_manutentiva').value;
   const sec = document.getElementById('ricambi-section');
-  if (val === 'Sostituzione componente') {
+  const needsRicambi = val === 'Sostituzione componente' || val === 'Riparazione';
+  if (needsRicambi) {
     sec.style.display = 'flex';
     if (ricambiRows.length === 0) addRicambioRow();
   } else {
@@ -801,6 +925,7 @@ function collectRicambi() {
 
 window.submitForm = async function() {
   const required = [
+    { id: 'f_codice_asset',         label: 'Codice asset' },
     { id: 'f_tipo_intervento',      label: 'Tipo intervento' },
     { id: 'f_componente',           label: 'Componente' },
     { id: 'f_modalita_rilevazione', label: 'Modalità rilevazione' },
@@ -822,8 +947,8 @@ window.submitForm = async function() {
   const squadra = collectSquadra();
   if (!squadra.length) { showToast('Inserisci almeno il responsabile intervento', true); return; }
 
-  if (v('f_azione_manutentiva') === 'Sostituzione componente' && collectRicambi().length === 0) {
-    showToast('Inserisci almeno un ricambio per la sostituzione', true); return;
+  if (['Sostituzione componente','Riparazione'].includes(v('f_azione_manutentiva')) && collectRicambi().length === 0) {
+    showToast('Inserisci almeno un ricambio per la sostituzione / riparazione', true); return;
   }
 
   // Validate chronology
@@ -842,8 +967,8 @@ window.submitForm = async function() {
     timestamp:              demoMode ? new Date().toISOString() : serverTimestamp(),
     id_intervento:          v('f_id_intervento'),
     data_apertura:          v('f_data_apertura'),
-    codice_asset:           'N210',
-    nome_asset:             '1° Nastro Trasportatore',
+    codice_asset:           v('f_codice_asset'),
+    nome_asset:             v('f_nome_asset'),
     linea:                  'Linea di Raffinazione Finale',
     tipo_intervento:        v('f_tipo_intervento'),
     componente:             v('f_componente'),
@@ -890,6 +1015,7 @@ window.submitForm = async function() {
 
 window.resetForm = function() {
   document.querySelectorAll('#view-form input:not([readonly]), #view-form select, #view-form textarea').forEach(el => el.value = '');
+  document.getElementById('f_nome_asset').value = '';
   document.getElementById('f_stato_record').value = 'Bozza';
   document.getElementById('ricambi-section').style.display = 'none';
   document.getElementById('dettaglio-field').classList.remove('visible');
@@ -897,7 +1023,10 @@ window.resetForm = function() {
   document.getElementById('ricambi-container').innerHTML = '';
   squadraRows = []; ricambiRows = [];
   document.getElementById('totale-ore-val').textContent = '0.0';
-  ['hint_sintomi','hint_attivita','hint_note'].forEach(id => { document.getElementById(id).textContent = '0 / ' + id.split('_')[1]; });
+  ['hint_sintomi','hint_attivita','hint_note'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { const max = id==='hint_sintomi'?500:id==='hint_attivita'?700:600; el.textContent = `0 / ${max} caratteri`; }
+  });
   generateId();
   document.getElementById('f_data_apertura').value = formatDateTime(new Date());
   addSquadraRow(true);
