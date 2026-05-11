@@ -222,7 +222,7 @@ tbody td{padding:11px 14px;font-size:13px;color:var(--text);max-width:200px;over
     <div class="section-header" onclick="toggleSection('sec1')">
       <div class="section-num">1</div>
       <div class="section-title">Intestazione intervento</div>
-      <div class="section-count">6 campi</div>
+      <div class="section-count">7 campi</div>
       <span class="chevron">▾</span>
     </div>
     <div class="section-body">
@@ -252,6 +252,11 @@ tbody td{padding:11px 14px;font-size:13px;color:var(--text);max-width:200px;over
         <div class="field">
           <label>Nome asset <span class="auto-tag">AUTO</span></label>
           <input type="text" id="f_nome_asset" readonly placeholder="Seleziona codice asset...">
+        </div>
+        <div class="field">
+          <label>Codice equipment <span class="auto-tag">AUTO</span></label>
+          <input type="text" id="f_codice_equipment" readonly placeholder="Associato al codice asset...">
+          <span class="field-hint">Codice SAP PM associato all'asset selezionato</span>
         </div>
         <div class="field field-full">
           <label>Linea / Sistema <span class="auto-tag">AUTO</span></label>
@@ -676,6 +681,16 @@ const ASSET_NAMES = {
   'M610':   'Vaglio a Dischi',
 };
 
+const EQUIPMENT_CODES = {
+  'M110':   'NAST - 10001',
+  'M210':   'NAST - 20001',
+  'M310':   'VAG - 30001',
+  'M410.1': 'NAST - 40001',
+  'M410.2': 'NAST - 40002',
+  'M510':   'NAST - 50001',
+  'M610':   'VAG - 60001',
+};
+
 // Spare-parts catalogue per asset: [ [code, description], ... ]
 const RICAMBI_BY_ASSET = {
   'M110': [
@@ -814,6 +829,9 @@ window.onAssetChange = function() {
   const code = document.getElementById('f_codice_asset').value;
   const nome = document.getElementById('f_nome_asset');
   nome.value = code ? ASSET_NAMES[code] : '';
+  // Populate equipment code
+  const eqEl = document.getElementById('f_codice_equipment');
+  if (eqEl) eqEl.value = code ? (EQUIPMENT_CODES[code] || '') : '';
   // Update header badge
   const badge = document.getElementById('assetBadgeText');
   if (badge) badge.textContent = code ? `${code} — ${ASSET_NAMES[code]} · Linea di Raffinazione Finale` : 'Seleziona un asset per iniziare';
@@ -971,6 +989,7 @@ window.submitForm = async function() {
     data_apertura:          v('f_data_apertura'),
     codice_asset:           v('f_codice_asset'),
     nome_asset:             v('f_nome_asset'),
+    codice_equipment:       v('f_codice_equipment'),
     linea:                  'Linea di Raffinazione Finale',
     tipo_intervento:        v('f_tipo_intervento'),
     componente:             v('f_componente'),
@@ -1018,6 +1037,8 @@ window.submitForm = async function() {
 window.resetForm = function() {
   document.querySelectorAll('#view-form input:not([readonly]), #view-form select, #view-form textarea').forEach(el => el.value = '');
   document.getElementById('f_nome_asset').value = '';
+  const eqEl = document.getElementById('f_codice_equipment');
+  if (eqEl) eqEl.value = '';
   document.getElementById('f_stato_record').value = 'Bozza';
   document.getElementById('ricambi-section').style.display = 'none';
   document.getElementById('dettaglio-field').classList.remove('visible');
