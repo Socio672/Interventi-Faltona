@@ -1207,13 +1207,14 @@ window.exportPDF = function(r) {
 
   const row2 = (l1, v1, l2, v2) => {
     chk(12);
-    const hw = cw / 2 - 2;
+    const hw = cw / 2 - 4;
     txt(l1, ml, y, { size: 7, color: [74, 85, 104] });
-    txt(l2, ml + hw + 4, y, { size: 7, color: [74, 85, 104] });
+    txt(l2, ml + hw + 6, y, { size: 7, color: [74, 85, 104] });
     y += 4;
-    txt(v1 || '—', ml, y, { size: 9, color: [232, 237, 245] });
-    txt(v2 || '—', ml + hw + 4, y, { size: 9, color: [232, 237, 245] });
-    y += 7;
+    const h1 = txt(v1 || '—', ml, y, { size: 9, color: [232, 237, 245], wrap: true, maxW: hw });
+    const h2 = txt(v2 || '—', ml + hw + 6, y, { size: 9, color: [232, 237, 245], wrap: true, maxW: hw });
+    const lines = Math.max(h1 || 1, h2 || 1);
+    y += Math.max(lines * 4.5, 7);
   };
 
   const rowFull = (label, value, wrap = false) => {
