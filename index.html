@@ -1160,7 +1160,7 @@ window.exportPDF = function(r) {
   let y = 0;
 
   // helpers
-  const chk = (need = 20) => { if (y + need > 275) { doc.addPage(); y = 20; } };
+  const chk = (need = 20) => { if (y + need > 275) { doc.addPage(); doc.setFillColor(15, 17, 23); doc.rect(0, 0, 210, 297, 'F'); y = 20; } };
   const line = () => { doc.setDrawColor(42, 51, 71); doc.line(ml, y, W - mr, y); y += 4; };
   const txt = (t, x, yy, opts = {}) => {
     doc.setFontSize(opts.size || 10);
